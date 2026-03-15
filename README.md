@@ -6,6 +6,12 @@ and get instant, conversational answers — powered by **Groq AI (LLaMA 3.3 70B)
 
 ---
 
+## Demo
+
+![Demo](./demo.gif)
+
+---
+
 ## 🧠 How It Works
 
 ```
