@@ -3,7 +3,7 @@ const OpenAI = require("openai");
 
 const groq = new OpenAI({
   apiKey: process.env.GROQ_API_KEY,
-  baseURL: "https://api.groq.com/openai/v1", // ← Groq baseURL
+  baseURL: "https://api.groq.com/openai/v1",
 });
 
 const textToMongoQuery = async (question, schema, history = []) => {
@@ -27,10 +27,16 @@ Important rules:
 - For nested fields use dot notation e.g. "shippingAddress.city"
 - For array fields use e.g. "items.price"
 - Always include a limit
-- Only use collections and fields that exist in the schema`;
+- Only use collections and fields that exist in the schema
+
+Business rules:
+- ALWAYS filter orders by status "delivered" when calculating revenue or total amount
+- NEVER sum totalAmount without { "$match": { "status": "delivered" } } as the first pipeline stage
+- Pending, shipped and cancelled orders must be excluded from any revenue calculation
+- Active users means isActive is true`;
 
   const response = await groq.chat.completions.create({
-    model: "llama-3.3-70b-versatile", // ← Groq model
+    model: "llama-3.3-70b-versatile",
     messages: [
       { role: "system", content: systemPrompt },
       ...history,
@@ -58,6 +64,11 @@ const resultsToAnswer = async (question, results) => {
         role: "user",
         content: `The user asked: "${question}"
 Results: ${JSON.stringify(results.slice(0, 10))}
+
+Important context:
+- Revenue only includes delivered orders, not pending or cancelled
+- If results are empty or show 0, still give a clear answer with the value as 0
+- NEVER say "there is no data" — always give the actual answer with 0 if needed
 
 Reply in 1-2 simple sentences like you are talking to a normal user.
 No technical terms, no mention of documents, collections, queries or JSON.
